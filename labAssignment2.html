@@ -92,7 +92,7 @@
             background: #cf5420;
         }
 
-        /* ── Search History pills ── */
+        
         #searched-cities-box {
             display: flex;
             flex-wrap: wrap;
@@ -116,7 +116,7 @@
             background: #cf5420;
         }
 
-        /* ── Weather Info container (right panel) ── */
+        
         #weather-info-container {
             background: #ffffff;
             border: 1.5px solid #ccc;
@@ -132,7 +132,7 @@
             margin-bottom: 10px;
         }
 
-        /* ── Weather card – table row style ── */
+        
         .weather-card {
             width: 100%;
             border-collapse: collapse;
@@ -162,7 +162,6 @@
             text-align: right;
         }
 
-        /* ── Error message ── */
         .error-msg {
             color: #e8642a;
             font-size: 0.85rem;
@@ -205,8 +204,6 @@
         let form = document.querySelector("form")
         let weather = document.querySelector("#city-weather-container")
 
-
-        // ── LocalStorage helpers ──
         function getHistory() {
             return JSON.parse(localStorage.getItem("weatherHistory")) || []
         }
@@ -272,12 +269,11 @@
             getWeather(city.value)
         })
 
-
-        // Load history on page start
         renderHistory()
 
     </script>
 
 </body>
+
 
 </html>
