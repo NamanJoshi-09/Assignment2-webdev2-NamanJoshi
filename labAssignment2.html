@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #1a1f4e;
+            color: #111;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffffff;
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        
+        #main-layout {
+            display: flex;
+            gap: 16px;
+            max-width: 860px;
+            margin: 0 auto;
+            align-items: flex-start;
+        }
+
+        
+        #search-main-container {
+            background: #ffffff;
+            border: 1.5px solid #ccc;
+            border-radius: 6px;
+            padding: 14px 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        #search-city-box h3,
+        #search-history-box h3 {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        form {
+            display: flex;
+            gap: 8px;
+        }
+
+        form input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid #bbb;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            outline: none;
+            color: #222;
+        }
+
+        form input:focus {
+            border-color: #1a1f4e;
+        }
+
+        form button {
+            padding: 6px 16px;
+            background: #e8642a;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        form button:hover {
+            background: #cf5420;
+        }
+
+        /* ── Search History pills ── */
+        #searched-cities-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            min-height: 28px;
+        }
+
+        .history-pill {
+            background: #e8642a;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .history-pill:hover {
+            background: #cf5420;
+        }
+
+        /* ── Weather Info container (right panel) ── */
+        #weather-info-container {
+            background: #ffffff;
+            border: 1.5px solid #ccc;
+            border-radius: 6px;
+            padding: 14px 16px;
+            flex: 1;
+        }
+
+        #weather-info-container h3 {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        /* ── Weather card – table row style ── */
+        .weather-card {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .weather-card tr {
+            border-bottom: 1px solid #ebebeb;
+        }
+
+        .weather-card tr:last-child {
+            border-bottom: none;
+        }
+
+        .weather-card td {
+            padding: 8px 10px;
+            font-size: 0.85rem;
+            color: #222;
+        }
+
+        .weather-card td:first-child {
+            font-weight: 600;
+            color: #555;
+            width: 120px;
+        }
+
+        .weather-card td:last-child {
+            text-align: right;
+        }
+
+        /* ── Error message ── */
+        .error-msg {
+            color: #e8642a;
+            font-size: 0.85rem;
+            padding: 4px 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🌥️Async Weather Tracker</h1>
+    <div id="main-layout">
+        <div id="search-main-container">
+            <div id="search-city-box">
+                <h3>Search City</h3>
+                <form action="">
+                    <input type="text" name="" id="city">
+                    <button type="submit">Search</button>
+                </form>
+            </div>
+            <div id="search-history-box">
+                <h3>Search History</h3>
+                <div id="searched-cities-box">
+
+                </div>
+            </div>
+        </div>
+
+        <div id="weather-info-container">
+            <h3>Weather Info</h3>
+            <div id="city-weather-container">
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        let API_KEY = "af9f63c59a649f27d602b96a43d0bd14"
+        let city = document.querySelector("#city")
+        let form = document.querySelector("form")
+        let weather = document.querySelector("#city-weather-container")
+
+
+        // ── LocalStorage helpers ──
+        function getHistory() {
+            return JSON.parse(localStorage.getItem("weatherHistory")) || []
+        }
+
+        function saveToHistory(cityName) {
+            let history = getHistory()
+            cityName = cityName.trim()
+            history = history.filter(c => c.toLowerCase() !== cityName.toLowerCase())
+            history.unshift(cityName)
+            if (history.length > 10) history = history.slice(0, 10)
+            localStorage.setItem("weatherHistory", JSON.stringify(history))
+            renderHistory()
+        }
+
+        function renderHistory() {
+            let box = document.querySelector("#searched-cities-box")
+            let history = getHistory()
+            box.innerHTML = ""
+            history.forEach(cityName => {
+                let pill = document.createElement("button")
+                pill.textContent = cityName
+                pill.classList.add("history-pill")
+                pill.addEventListener("click", () => {
+                    city.value = cityName
+                    getWeather(cityName)
+                })
+                box.appendChild(pill)
+            })
+        }
+
+
+        async function getWeather(city) {
+            try {
+                let response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`)
+                let data = await response.json()
+
+                if (data.cod !== 200) {
+                    weather.innerHTML = `<p class="error-msg">City not found</p>`
+                    return
+                }
+
+                let card = document.createElement('table')
+                card.classList.add("weather-card")
+                card.innerHTML = `
+                    <tr><td>City</td><td>${data.name}, ${data.sys.country}</td></tr>
+                    <tr><td>Temp</td><td>${data.main.temp} °C</td></tr>
+                    <tr><td>Weather</td><td>${data.weather[0].main}</td></tr>
+                    <tr><td>Humidity</td><td>${data.main.humidity}%</td></tr>
+                    <tr><td>Wind</td><td>${data.wind.speed} m/s</td></tr>`
+                weather.innerHTML = ""
+                weather.append(card)
+                console.log(data)
+
+                saveToHistory(data.name)
+
+            } catch (error) {
+                weather.innerHTML = `<p class="error-msg">Network error. Please try again.</p>`
+            }
+        }
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            getWeather(city.value)
+        })
+
+
+        // Load history on page start
+        renderHistory()
+
+    </script>
+
+</body>
+
+</html>
